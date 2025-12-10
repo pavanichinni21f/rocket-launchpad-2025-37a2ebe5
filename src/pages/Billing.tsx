@@ -1,33 +1,35 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import {
   Check,
   Zap,
-  Server,
   Shield,
-  Globe,
-  Headphones,
   CreditCard,
   Receipt,
   ArrowRight,
   Crown,
   Rocket,
   Loader2,
+  IndianRupee,
+  DollarSign,
 } from 'lucide-react';
 import { getSubscription, getInvoices, createCheckoutSession, createBillingPortalSession } from '@/services/paymentService';
+import { PayUCheckout } from '@/components/payment/PayUCheckout';
 import type { Subscription, Invoice } from '@/services/paymentService';
 
 const plans = [
   {
     name: 'Free',
-    price: 0,
+    priceUSD: 0,
+    priceINR: 0,
     description: 'Perfect for getting started',
     features: [
       '1 Hosting Account',
@@ -38,10 +40,12 @@ const plans = [
     ],
     icon: Rocket,
     popular: false,
+    planId: 'free' as const,
   },
   {
     name: 'Starter',
-    price: 4.99,
+    priceUSD: 4.99,
+    priceINR: 399,
     description: 'Best for personal projects',
     features: [
       '3 Hosting Accounts',
@@ -54,10 +58,12 @@ const plans = [
     ],
     icon: Zap,
     popular: false,
+    planId: 'starter' as const,
   },
   {
     name: 'Business',
-    price: 9.99,
+    priceUSD: 9.99,
+    priceINR: 799,
     description: 'For growing businesses',
     features: [
       'Unlimited Hosting Accounts',
@@ -72,10 +78,12 @@ const plans = [
     ],
     icon: Crown,
     popular: true,
+    planId: 'business' as const,
   },
   {
     name: 'Enterprise',
-    price: 29.99,
+    priceUSD: 29.99,
+    priceINR: 2499,
     description: 'For large scale operations',
     features: [
       'Everything in Business',
@@ -90,21 +98,31 @@ const plans = [
     ],
     icon: Shield,
     popular: false,
+    planId: 'enterprise' as const,
   },
 ];
 
-const invoices = [
-  { id: 'INV-001', date: '2024-12-01', amount: 9.99, status: 'Paid' },
-  { id: 'INV-002', date: '2024-11-01', amount: 9.99, status: 'Paid' },
-  { id: 'INV-003', date: '2024-10-01', amount: 9.99, status: 'Paid' },
-];
-
 export default function Billing() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const [searchParams] = useSearchParams();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [invoiceList, setInvoiceList] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const [paymentGateway, setPaymentGateway] = useState<'stripe' | 'payu'>('payu');
+  const [showPayUCheckout, setShowPayUCheckout] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
+  const [currency, setCurrency] = useState<'USD' | 'INR'>('INR');
+
+  // Check for payment status from URL
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    if (paymentStatus === 'success') {
+      toast.success('Payment successful! Your subscription has been upgraded.');
+    } else if (paymentStatus === 'failed') {
+      toast.error('Payment failed. Please try again.');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (user) {
@@ -134,26 +152,37 @@ export default function Billing() {
     }
   };
 
-  const handleUpgrade = async (planName: 'starter' | 'business' | 'enterprise') => {
+  const handleUpgrade = async (plan: typeof plans[0]) => {
     if (!user) {
       toast.error('You must be logged in to upgrade');
       return;
     }
 
-    setIsUpgrading(true);
-    try {
-      const { error, data } = await createCheckoutSession(user.id, planName);
-      if (error) {
-        toast.error('Failed to start checkout');
-        return;
+    if (plan.planId === 'free') {
+      toast.info('You are already on the free plan');
+      return;
+    }
+
+    if (paymentGateway === 'payu') {
+      setSelectedPlan(plan);
+      setShowPayUCheckout(true);
+    } else {
+      // Stripe flow
+      setIsUpgrading(true);
+      try {
+        const { error, data } = await createCheckoutSession(user.id, plan.planId);
+        if (error) {
+          toast.error('Failed to start checkout');
+          return;
+        }
+        if (data?.url) {
+          window.location.href = data.url;
+        }
+      } catch (error) {
+        toast.error('An error occurred');
+      } finally {
+        setIsUpgrading(false);
       }
-      if (data?.url) {
-        window.location.href = data.url;
-      }
-    } catch (error) {
-      toast.error('An error occurred');
-    } finally {
-      setIsUpgrading(false);
     }
   };
 
@@ -175,16 +204,40 @@ export default function Billing() {
     }
   };
 
-  const currentPlan = subscription?.plan_name || 'free';
+  const currentPlan = profile?.subscription_plan || 'free';
+  const getPrice = (plan: typeof plans[0]) => currency === 'INR' ? plan.priceINR : plan.priceUSD;
+  const currencySymbol = currency === 'INR' ? '₹' : '$';
 
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold">Billing & Plans</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your subscription and view billing history
-          </p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">Billing & Plans</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage your subscription and view billing history
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <Tabs value={currency} onValueChange={(v) => setCurrency(v as 'USD' | 'INR')}>
+              <TabsList>
+                <TabsTrigger value="INR" className="flex items-center gap-1">
+                  <IndianRupee className="h-3 w-3" /> INR
+                </TabsTrigger>
+                <TabsTrigger value="USD" className="flex items-center gap-1">
+                  <DollarSign className="h-3 w-3" /> USD
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
+            <Tabs value={paymentGateway} onValueChange={(v) => setPaymentGateway(v as 'stripe' | 'payu')}>
+              <TabsList>
+                <TabsTrigger value="payu">PayU</TabsTrigger>
+                <TabsTrigger value="stripe">Stripe</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
 
         {/* Current Plan */}
@@ -227,14 +280,14 @@ export default function Billing() {
                 key={plan.name}
                 className={`relative ${
                   plan.popular ? 'border-primary shadow-lg shadow-primary/20' : ''
-                } ${currentPlan === plan.name.toLowerCase() ? 'ring-2 ring-success' : ''}`}
+                } ${currentPlan === plan.planId ? 'ring-2 ring-success' : ''}`}
               >
                 {plan.popular && (
                   <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
                     Most Popular
                   </Badge>
                 )}
-                {currentPlan === plan.name.toLowerCase() && (
+                {currentPlan === plan.planId && (
                   <Badge className="absolute -top-3 right-4 bg-success">
                     Current
                   </Badge>
@@ -248,7 +301,7 @@ export default function Billing() {
                 </CardHeader>
                 <CardContent className="text-center">
                   <div className="mb-6">
-                    <span className="text-4xl font-bold">${plan.price}</span>
+                    <span className="text-4xl font-bold">{currencySymbol}{getPrice(plan)}</span>
                     <span className="text-muted-foreground">/month</span>
                   </div>
                   <ul className="space-y-3 text-left mb-6">
@@ -262,20 +315,13 @@ export default function Billing() {
                   <Button
                     className={`w-full ${plan.popular ? 'btn-rocket' : ''}`}
                     variant={plan.popular ? 'default' : 'outline'}
-                    disabled={currentPlan === plan.name.toLowerCase() || isUpgrading}
-                    onClick={() => {
-                      if (plan.price === 0) {
-                        // Free plan - just show a message
-                        toast.info('You are on the free plan');
-                      } else {
-                        handleUpgrade(plan.name.toLowerCase() as 'starter' | 'business' | 'enterprise');
-                      }
-                    }}
+                    disabled={currentPlan === plan.planId || isUpgrading}
+                    onClick={() => handleUpgrade(plan)}
                   >
                     {isUpgrading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                    {currentPlan === plan.name.toLowerCase()
+                    {currentPlan === plan.planId
                       ? 'Current Plan'
-                      : plan.price === 0
+                      : plan.priceUSD === 0
                       ? 'Get Started'
                       : 'Upgrade'}
                   </Button>
@@ -301,8 +347,14 @@ export default function Billing() {
                   <CreditCard className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="font-medium">Payment info managed via Stripe</p>
-                  <p className="text-sm text-muted-foreground">Click "Manage" above to update payment method</p>
+                  <p className="font-medium">
+                    {paymentGateway === 'payu' ? 'PayU Payment Gateway' : 'Stripe Payment Gateway'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {paymentGateway === 'payu' 
+                      ? 'Pay with UPI, Cards, Net Banking, Wallets'
+                      : 'Pay with Credit/Debit Cards'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -342,7 +394,7 @@ export default function Billing() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="font-medium">${(invoice.amount / 100).toFixed(2)}</span>
+                      <span className="font-medium">{currencySymbol}{(invoice.amount / 100).toFixed(2)}</span>
                       <Badge variant="outline" className={invoice.status === 'paid' ? 'text-success border-success' : 'text-destructive border-destructive'}>
                         {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                       </Badge>
@@ -361,6 +413,22 @@ export default function Billing() {
           </CardContent>
         </Card>
       </div>
+
+      {/* PayU Checkout Modal */}
+      {selectedPlan && (
+        <PayUCheckout
+          isOpen={showPayUCheckout}
+          onClose={() => {
+            setShowPayUCheckout(false);
+            setSelectedPlan(null);
+          }}
+          plan={{
+            name: selectedPlan.name,
+            price: currency === 'INR' ? selectedPlan.priceINR : selectedPlan.priceUSD,
+            planId: selectedPlan.planId as 'starter' | 'business' | 'enterprise',
+          }}
+        />
+      )}
     </DashboardLayout>
   );
 }
