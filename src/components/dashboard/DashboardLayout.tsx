@@ -40,6 +40,7 @@ import {
   Shield,
   Users,
 } from 'lucide-react';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import kslogo from '@/assets/kslogo.png';
 
 const menuItems = [
@@ -140,6 +141,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
 
             <div className="flex items-center gap-4">
+              <NotificationCenter />
+              
               <Button variant="outline" size="sm" className="hidden sm:flex" onClick={() => navigate('/dashboard/hosting/new')}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Account
