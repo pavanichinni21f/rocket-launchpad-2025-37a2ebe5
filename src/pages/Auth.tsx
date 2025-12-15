@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { Loader2, Rocket, Mail, Lock, User, Chrome, Apple, Github } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import kslogo from '@/assets/kslogo.png';
+import AgentsPanel from '@/components/ai/AgentsPanel';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -81,11 +82,12 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background p-4">
       <div className="absolute inset-0 bg-hero-pattern opacity-50" />
       <div className="absolute inset-0 bg-grid-pattern bg-[size:40px_40px] opacity-10" />
-      
-      <Card className="w-full max-w-md relative z-10 glass-card border-border/50">
+
+      <div className="relative z-10 mx-auto max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+        <Card className="w-full relative glass-card border-border/50">
         <CardHeader className="text-center space-y-4">
           <Link to="/" className="flex justify-center">
             <img src={kslogo} alt="KSFoundation" className="h-16 w-auto" />
@@ -329,7 +331,12 @@ export default function Auth() {
             <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
           </div>
         </CardContent>
-      </Card>
+        </Card>
+
+        <div className="hidden md:block">
+          <AgentsPanel />
+        </div>
+      </div>
     </div>
   );
 }

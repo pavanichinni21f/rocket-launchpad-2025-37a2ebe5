@@ -22,7 +22,8 @@ import {
   DollarSign,
 } from 'lucide-react';
 import { getSubscription, getInvoices, createCheckoutSession, createBillingPortalSession } from '@/services/paymentService';
-import { PayUCheckout } from '@/components/payment/PayUCheckout';
+import { addToCart } from '@/services/cartService';
+import { useNavigate } from 'react-router-dom';
 import type { Subscription, Invoice } from '@/services/paymentService';
 
 const plans = [
@@ -110,9 +111,8 @@ export default function Billing() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [paymentGateway, setPaymentGateway] = useState<'stripe' | 'payu'>('payu');
-  const [showPayUCheckout, setShowPayUCheckout] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
   const [currency, setCurrency] = useState<'USD' | 'INR'>('INR');
+  const navigate = useNavigate();
 
   // Check for payment status from URL
   useEffect(() => {
@@ -158,31 +158,28 @@ export default function Billing() {
       return;
     }
 
+<<<<<<< HEAD
     if (plan.planId === 'free') {
       toast.info('You are already on the free plan');
       return;
     }
 
-    if (paymentGateway === 'payu') {
-      setSelectedPlan(plan);
-      setShowPayUCheckout(true);
-    } else {
-      // Stripe flow
-      setIsUpgrading(true);
-      try {
-        const { error, data } = await createCheckoutSession(user.id, plan.planId);
-        if (error) {
-          toast.error('Failed to start checkout');
-          return;
-        }
-        if (data?.url) {
-          window.location.href = data.url;
-        }
-      } catch (error) {
-        toast.error('An error occurred');
-      } finally {
-        setIsUpgrading(false);
-      }
+    // Instead of direct checkout, add to cart so users can purchase multiple items
+    try {
+      await addToCart(user.id, `${plan.planId}-monthly`);
+      toast.success(`${plan.name} added to cart`);
+      navigate('/cart');
+    } catch (e) {
+      toast.error('Failed to add to cart');
+    }
+    // Instead of direct checkout, add to cart so users can purchase multiple items
+    try {
+      await addToCart(user.id, `${planName.toLowerCase()}-monthly`);
+      toast.success(`${planName} added to cart`);
+      navigate('/cart');
+    } catch (e) {
+      toast.error('Failed to add to cart');
+>>>>>>> 12adb94 (KSF branding: replace Lovable assets; add KSF favicon/README; scaffold AI agents/chat and Google OAuth UI layout)
     }
   };
 

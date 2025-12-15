@@ -4,70 +4,52 @@
 
 **URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
 
-## How can I edit this code?
+# Rocket Launchpad (KSF)
 
-There are several ways of editing your application.
+Rocket Launchpad is a demo hosting/control-panel platform built with React, TypeScript, Vite, and Tailwind. This repository contains the frontend UI and client-side scaffolding for payments, hosting provisioning, and AI integrations — configured to run locally in demo (mock) mode without any third-party API keys.
 
-**Use Lovable**
+Important: This repo intentionally ships with mock providers for payments and AI in order to run without secrets. Replace environment variables and enable server-side integrations before using in production.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+Quick start
 
-Changes made via Lovable will be committed automatically to this repo.
+```bash
+# 1. Install dependencies
+npm install
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 2. Start the dev server
 npm run dev
+
+# 3. Build for production
+npm run build
 ```
 
-**Edit a file directly in GitHub**
+Recommended workflow
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- Edit code in `src/` and run `npm run dev`.
+- Replace mock providers in `src/services/paymentProviders` and `src/services/ai` with real provider SDKs and add server-side webhooks for secure verification.
+- Use the `supabase/` directory for reference serverless functions and database migrations; adapt to your preferred backend.
 
-**Use GitHub Codespaces**
+How to push to GitHub from your machine
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```bash
+git add .
+git commit -m "Apply KSF branding and initial scaffolding"
+git push origin main
+```
 
-## What technologies are used for this project?
+If you prefer, I can prepare the commit locally and show the exact `git` commands to run next.
 
-This project is built with:
+Notes and next steps
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- Google OAuth: scaffolded placeholders exist; you'll need client IDs for production and a server-side callback for secure sessions.
+- Chatbot: UI scaffold added; current integration uses a mock ChatGPT adapter. Replace with your OpenAI API key or a hosted inference endpoint.
+- Payments: mock provider enabled by default. For real gateways (Stripe, Razorpay, PayU), add server-side endpoints and webhooks.
+- Production hardening: environment secret management, database migrations, monitoring, and CI/CD pipeline are required before public deployment.
 
-## How can I deploy this project?
+If you want, I will:
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+- Commit and show `git push` steps (I cannot push on your behalf without credentials).
+- Start the Google OAuth and ChatGPT integration scaffolding next.
+- Create the role-based admin and hosting provisioning plan and initial server scaffolding.
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Tell me which of the next items you want prioritized.

@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import * as providers from '@/services/paymentProviders';
 
 export interface Subscription {
   id: string;
@@ -48,15 +49,33 @@ export async function createCheckoutSession(
   planName: 'starter' | 'business' | 'enterprise'
 ): Promise<{ error: Error | null; data?: { sessionId: string; url: string } }> {
   try {
-    const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-      body: {
-        userId,
-        planName,
-      },
-    });
+    const provider = (import.meta.env.VITE_PAYMENT_PROVIDER as string) || 'mock';
 
-    if (error) throw error;
-    return { error: null, data };
+    // If provider is stripe, prefer existing supabase function (server-side)
+    if (provider === 'stripe') {
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: {
+          userId,
+          planName,
+        },
+      });
+
+      if (error) throw error;
+      return { error: null, data };
+    }
+
+    // For mock / other providers, use client-side provider wrapper
+    const items = [
+      {
+        service_id: `${planName.toLowerCase()}-monthly`,
+        name: planName,
+        quantity: 1,
+        price: planName === 'starter' ? 4.99 : planName === 'business' ? 9.99 : 29.99,
+      },
+    ];
+
+    const session = await providers.createCheckoutSession({ userId, items, currency: 'USD' });
+    return { error: null, data: { sessionId: session.id, url: session.url } };
   } catch (error) {
     console.error('Failed to create checkout session:', error);
     return { error: error instanceof Error ? error : new Error('Checkout failed') };

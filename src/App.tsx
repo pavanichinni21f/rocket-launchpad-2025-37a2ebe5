@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Billing from "./pages/Billing";
+import CartPage from "./components/cart/CartPage";
 import HostingAccounts from "./pages/HostingAccounts";
 import DashboardDomains from "./pages/DashboardDomains";
 import Support from "./pages/Support";
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
+            <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
