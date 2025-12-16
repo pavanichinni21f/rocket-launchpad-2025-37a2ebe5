@@ -1,4 +1,44 @@
 import { Link } from 'react-router-dom';
+
+export default function Footer() {
+  return (
+    <footer className="bg-background border-t mt-12">
+      <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row justify-between items-start gap-6">
+        <div>
+          <Link to="/" className="font-bold text-lg">Rocket Launchpad</Link>
+          <p className="text-sm text-muted-foreground mt-2">Modern hosting platform — demo mode</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <h4 className="font-semibold">Product</h4>
+            <ul className="mt-2 space-y-2 text-sm">
+              <li><Link to="/cloud">Cloud Hosting</Link></li>
+              <li><Link to="/vps">VPS Hosting</Link></li>
+              <li><Link to="/wordpress">WordPress Hosting</Link></li>
+              <li><Link to="/domains">Domains</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold">Company</h4>
+            <ul className="mt-2 space-y-2 text-sm">
+              <li><Link to="/support">Support</Link></li>
+              <li><Link to="/terms">Terms</Link></li>
+              <li><Link to="/privacy">Privacy</Link></li>
+              <li><Link to="/pricing">Pricing</Link></li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="text-sm text-muted-foreground">
+          © {new Date().getFullYear()} Rocket Launchpad — Demo. All rights reserved.
+        </div>
+      </div>
+    </footer>
+  );
+}
+import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Youtube, Linkedin, Instagram } from 'lucide-react';
 import ksLogo from '@/assets/kslogo.png';
 

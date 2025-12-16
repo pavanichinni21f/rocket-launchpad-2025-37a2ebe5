@@ -21,6 +21,13 @@ import WordPressHosting from "./pages/WordPressHosting";
 import CloudHosting from "./pages/CloudHosting";
 import Domains from "./pages/Domains";
 import NotFound from "./pages/NotFound";
+import Footer from '@/components/layout/Footer';
+import Terms from '@/pages/Terms';
+import Privacy from '@/pages/Privacy';
+import Admin from '@/pages/Admin';
+import Orders from '@/pages/Orders';
+import Invoices from '@/pages/Invoices';
+import RequireRole from '@/components/auth/RequireRole';
 
 const queryClient = new QueryClient();
 
@@ -39,6 +46,11 @@ const App = () => (
             <Route path="/wordpress" element={<WordPressHosting />} />
             <Route path="/cloud" element={<CloudHosting />} />
             <Route path="/domains" element={<Domains />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/admin" element={<ProtectedRoute><RequireRole role="admin"><Admin /></RequireRole></ProtectedRoute>} />
+            <Route path="/orders" element={<ProtectedRoute><RequireRole role="admin"><Orders /></RequireRole></ProtectedRoute>} />
+            <Route path="/invoices" element={<ProtectedRoute><RequireRole role="admin"><Invoices /></RequireRole></ProtectedRoute>} />
             
             {/* Protected Routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -54,6 +66,7 @@ const App = () => (
             
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <Footer />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
