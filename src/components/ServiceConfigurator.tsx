@@ -74,7 +74,7 @@ const ServiceConfigurator: React.FC<ServiceConfiguratorProps> = ({ serviceType, 
 
     setLoading(true);
     try {
-      await addToCart(user.id, `${serviceType}-configured`, config);
+      await addToCart(`${serviceType}-configured`, 1, config as unknown as Record<string, unknown>);
       toast.success('Added to cart!');
       navigate('/cart');
     } catch (error) {

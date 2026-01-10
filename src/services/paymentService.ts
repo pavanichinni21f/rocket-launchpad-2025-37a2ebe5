@@ -67,7 +67,7 @@ export async function createCheckoutSession(
     // For mock / other providers, use client-side provider wrapper
     const items = [
       {
-        service_id: `${planName.toLowerCase()}-monthly`,
+        id: `${planName.toLowerCase()}-monthly`,
         name: planName,
         quantity: 1,
         price: planName === 'starter' ? 4.99 : planName === 'business' ? 9.99 : 29.99,
@@ -75,7 +75,11 @@ export async function createCheckoutSession(
     ];
 
     const session = await providers.createCheckoutSession({ userId, items, currency: 'USD' });
-    return { error: null, data: { sessionId: session.id, url: session.url } };
+    // Handle different response types from providers
+    const sessionData = session as { id?: string; url?: string; paymentUrl?: string; txnId?: string };
+    const sessionId = sessionData.id || sessionData.txnId || '';
+    const sessionUrl = sessionData.url || sessionData.paymentUrl || '';
+    return { error: null, data: { sessionId, url: sessionUrl } };
   } catch (error) {
     console.error('Failed to create checkout session:', error);
     return { error: error instanceof Error ? error : new Error('Checkout failed') };
