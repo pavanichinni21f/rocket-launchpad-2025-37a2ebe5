@@ -5,16 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { getCart, removeFromCart, calculateCartTotal, updateCartQuantity } from '@/services/cartService';
+import { getCart, removeFromCart, calculateCartTotal, updateCartItemQuantity, type Cart, type CartItem } from '@/services/cartService';
 import { createOrderFromCart } from '@/services/orderService';
 import { detectCountryFromLocale, currencyForCountry, taxRateForCountry, formatCurrency } from '@/services/priceUtils';
-import { createCheckoutSession } from '@/services/paymentService';
 import { ArrowRight, Trash2, ShoppingCart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const CartPage: React.FC = () => {
   const { user } = useAuth();
-  const [items, setItems] = useState<any[]>([]);
+  const [cart, setCart] = useState<Cart | null>(null);
   const [totals, setTotals] = useState({ subtotal: 0, discount: 0, total: 0 });
   const [country, setCountry] = useState('US');
   const [currency, setCurrency] = useState('USD');
@@ -23,14 +22,14 @@ const CartPage: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) loadCart();
-  }, [user]);
+    loadCart();
+  }, []);
 
   const loadCart = async () => {
     try {
-      const c = await getCart(user!.id);
-      setItems(c as any[]);
-      const tot = await calculateCartTotal(user!.id);
+      const c = await getCart();
+      setCart(c);
+      const tot = await calculateCartTotal();
       setTotals(tot);
       const detected = detectCountryFromLocale();
       setCountry(detected);
@@ -40,9 +39,9 @@ const CartPage: React.FC = () => {
     }
   };
 
-  const handleRemove = async (serviceId: string) => {
+  const handleRemove = async (itemId: string) => {
     try {
-      await removeFromCart(user!.id, serviceId);
+      await removeFromCart(itemId);
       await loadCart();
       toast.success('Removed');
     } catch (e) {
@@ -50,10 +49,10 @@ const CartPage: React.FC = () => {
     }
   };
 
-  const handleQuantityChange = async (serviceId: string, newQuantity: number) => {
+  const handleQuantityChange = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
     try {
-      await updateCartQuantity(user!.id, serviceId, newQuantity);
+      await updateCartItemQuantity(itemId, newQuantity);
       await loadCart();
     } catch (e) {
       toast.error('Failed to update quantity');
@@ -62,12 +61,16 @@ const CartPage: React.FC = () => {
 
   const handleCheckout = async () => {
     if (!user) return toast.error('Login required');
-    if (items.length === 0) return toast.error('Cart is empty');
+    if (!cart || cart.items.length === 0) return toast.error('Cart is empty');
     setLoading(true);
     try {
-      const order = await createOrderFromCart(user!.id, coupon);
-      toast.success('Order created successfully!');
-      navigate('/orders');
+      const result = await createOrderFromCart(user.id);
+      if (result.success) {
+        toast.success('Order created successfully!');
+        navigate('/orders');
+      } else {
+        toast.error(result.error || 'Order creation failed');
+      }
     } catch (e) {
       toast.error('Order creation failed');
     } finally {
@@ -85,6 +88,8 @@ const CartPage: React.FC = () => {
       </DashboardLayout>
     );
   }
+
+  const items = cart?.items || [];
 
   if (items.length === 0) {
     return (
@@ -107,23 +112,23 @@ const CartPage: React.FC = () => {
               <CardTitle>Shopping Cart</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {items.map((item: any) => (
+              {items.map((item: CartItem) => (
                 <div key={item.id} className="flex items-center justify-between p-4 border rounded">
                   <div>
-                    <p className="font-semibold">{item.services?.name || item.service_id}</p>
+                    <p className="font-semibold">{item.serviceName}</p>
                     <p className="text-sm text-muted-foreground">
-                      {item.services?.type} • {item.billing_cycle}
+                      {item.billingCycle}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
-                      <Button variant="outline" size="sm" onClick={() => handleQuantityChange(item.service_id, item.quantity - 1)} disabled={item.quantity <= 1}>-</Button>
+                      <Button variant="outline" size="sm" onClick={() => handleQuantityChange(item.id, item.quantity - 1)} disabled={item.quantity <= 1}>-</Button>
                       <span className="text-sm">Qty: {item.quantity}</span>
-                      <Button variant="outline" size="sm" onClick={() => handleQuantityChange(item.service_id, item.quantity + 1)}>+</Button>
+                      <Button variant="outline" size="sm" onClick={() => handleQuantityChange(item.id, item.quantity + 1)}>+</Button>
                     </div>
-                    <p className="text-sm font-medium">${item.unit_price}/{item.billing_cycle}</p>
+                    <p className="text-sm font-medium">₹{item.unitPrice}/{item.billingCycle}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold">${item.total_price}</span>
-                    <Button variant="ghost" onClick={() => handleRemove(item.service_id)}>
+                    <span className="font-semibold">₹{item.totalPrice}</span>
+                    <Button variant="ghost" onClick={() => handleRemove(item.id)}>
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
                   </div>

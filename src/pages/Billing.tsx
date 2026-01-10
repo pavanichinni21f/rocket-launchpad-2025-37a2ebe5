@@ -165,7 +165,7 @@ export default function Billing() {
 
     // Instead of direct checkout, add to cart so users can purchase multiple items
     try {
-      await addToCart(user.id, `${plan.planId}-monthly`);
+      await addToCart(`${plan.planId}-monthly`);
       toast.success(`${plan.name} added to cart`);
       navigate('/cart');
     } catch (e) {
